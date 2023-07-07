@@ -2,14 +2,12 @@ import base64
 import io
 import json
 import time
-
 import geocoder
 import picamera
 import psycopg2
 import psycopg2.extras
 import requests
 from psycopg2 import Error
-
 
 def get_location():
     '''
@@ -156,7 +154,6 @@ def findifrecyclable():
         if label in recyclable_objects:
             return f"This object is recyclable."
     return f"This object is not recyclable."
-
 
 if __name__ == '__main__':
     #Detects the location
