@@ -1,7 +1,9 @@
 import json
+import threading
 import time
 
 import geocoder
+import keyboard
 import psycopg2
 import psycopg2.extras
 import pygame
@@ -104,7 +106,14 @@ def play_audio(text):
     pygame.mixer.music.play()
 
     while pygame.mixer.music.get_busy():
+        if keyboard.is_pressed('q'):  # If 'q' key is pressed, stop playing audio
+            pygame.mixer.music.stop()
+            break
         time.sleep(1)
+
+def play_audio_threaded(text):
+    audio_thread = threading.Thread(target=play_audio, args=(text,))
+    audio_thread.start()
 
 def findifrecyclable(recycling_object_name, recyclable_objects, nonrecyclable_objects):
     '''
@@ -220,15 +229,17 @@ if __name__ == '__main__':
                     keyword_recognizer.adjust_for_ambient_noise(response_source, duration=1)
                     response_audio = keyword_recognizer.listen(response_source)
                 user_response = keyword_recognizer.recognize_google(response_audio).lower()
-                print("Prompt: ", user_response)
+                print("Prompt:", user_response)
                 if user_response.lower() == "no":
                     print(None)
                 elif any(keyword in user_response.lower() for keyword in ["stop", "exit", "quit"]):
-                    # User indicated to stop interacting, exit the loop
-                    break
+                    play_audio_threaded("Sure! If you want to regenerate the response, please say the wake-up phrase again.")
+                    time.sleep(5)  # Wait for a few seconds before ending the program or prompting GPT again
+                    break  # Exit the program
                 else:
                     response = generate_additional_insights(user_response)
-                    play_audio(response)
+                    print("Response:", response)
+                    play_audio_threaded(response)
             except sr.UnknownValueError:
                 # No wake-up phrase detected, continue listening
                 pass
