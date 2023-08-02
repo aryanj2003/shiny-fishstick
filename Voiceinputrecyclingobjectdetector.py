@@ -1,9 +1,11 @@
+import json
 import time
 
 import geocoder
 import psycopg2
 import psycopg2.extras
 import pygame
+import requests
 import sounddevice as sd
 import speech_recognition as sr
 from gtts import gTTS
@@ -107,7 +109,9 @@ def play_audio(text):
 def findifrecyclable(recycling_object_name, recyclable_objects, nonrecyclable_objects):
     '''
     Purpose: To determine if the object spoken by the user is recyclable or not.
-    Parameters: recycling_object_name = The name of the recycling object
+    Parameters: recycling_object_name: The name of the recycling object
+                recyclable_objects: The list of all the recycling objects.
+                nonrecyclable objects: The list of all the non-recycling objects.
     Return value: Voice output for whether a given object is recyclable or not
     '''
     # Split the recycling_object_name into individual words
@@ -141,6 +145,32 @@ def detect_wake_up_phrase():
     except sr.RequestError as e:
         print("Could not request results from Google Web Speech API; {0}".format(e))
     return False
+
+def generate_additional_insights(prompt):
+    '''
+    Purpose: To generate additional insights for the detected recycling or non-recycling object.
+    Parameters: prompt: A string containing the prompt given by the user to the Artificial Intelligence model for getting additional insights.
+    Return value: A string which includes some additional insights for the user for whatever object they want recycling data for.
+    '''
+    url = "https://ecs-open-ai.openai.azure.com/openai/deployments/ecs-gpt/completions?api-version=2022-12-01"
+
+    payload = json.dumps({
+    "prompt": prompt,
+    "temperature": 1,
+    "top_p": 0.5,
+    "frequency_penalty": 0,
+    "presence_penalty": 0,
+    "max_tokens": 100,
+    "stop": None
+    })
+    headers = {
+    'Content-Type': 'application/json',
+    'api-key': 'cdb0b57d1f294b2d8d3674c13211fe2e'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+
+    return response.text
 
 greeting_played = False
 if __name__ == '__main__':
@@ -184,6 +214,21 @@ if __name__ == '__main__':
 
                     # Output the result using a speaker
                     play_audio(result)
+                    # Create a new audio variable for capturing user's response for additional insights
+                additional_insights_confirmationquestion = play_audio("Would you like any additional insights")
+                with sr.Microphone() as response_source:
+                    keyword_recognizer.adjust_for_ambient_noise(response_source, duration=1)
+                    response_audio = keyword_recognizer.listen(response_source)
+                user_response = keyword_recognizer.recognize_google(response_audio).lower()
+                print("Prompt: ", user_response)
+                if user_response.lower() == "no":
+                    print(None)
+                elif any(keyword in user_response.lower() for keyword in ["stop", "exit", "quit"]):
+                    # User indicated to stop interacting, exit the loop
+                    break
+                else:
+                    response = generate_additional_insights(user_response)
+                    play_audio(response)
             except sr.UnknownValueError:
                 # No wake-up phrase detected, continue listening
                 pass
