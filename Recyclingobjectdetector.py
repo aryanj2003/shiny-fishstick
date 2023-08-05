@@ -181,7 +181,8 @@ def findifrecyclable(object_description):
         for recyclable_object in recyclable_objects:
             if recyclable_object.lower() in label.lower() or label.lower() in recyclable_object.lower():
                 return f"This {recyclable_object} goes in the recycling bin."
-    return f"This {nonrecyclable_object} does not go in the recycling bin."
+    # If no match is found, return a default message
+    return "Sorry, I couldn't recognize that item for recycling."
 
 def play_audio(text):
     tts = gTTS(text=text, lang='en')  # Set the language (e.g., 'en' for English)
