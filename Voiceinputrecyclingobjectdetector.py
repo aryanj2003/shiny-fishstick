@@ -257,7 +257,7 @@ if __name__ == '__main__':
                                 break  # Exit the loop
                     except KeyboardInterrupt:
                         #Ask the user if the want to exit the program
-                        play_audio_threaded('Would you like to exit the program')
+                        play_audio_threaded('Would you like to exit the program?')
 
                         #Clarify what the user wants to do if they halted the program in the middle
                         with sr.Microphone() as audio_source:
@@ -266,6 +266,7 @@ if __name__ == '__main__':
                             user_answer = keyword_recognizer.recognize_google(response_audio).lower()
                             #If the response is yes, exit the program. Otherwise, continue listening for input
                             if user_answer == 'yes':
+                                play_audio_threaded("Exiting the program")
                                 break
                             else:
                                 pass
@@ -275,4 +276,4 @@ if __name__ == '__main__':
             except sr.RequestError as e:
                 print("Could not request results from Google Web Speech API; {0}".format(e))
     except KeyboardInterrupt:
-        print("Exiting the program.")
+        play_audio_threaded("Exiting the program")
