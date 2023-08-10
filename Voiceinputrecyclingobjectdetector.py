@@ -257,7 +257,7 @@ if __name__ == '__main__':
                     
                     while is_playing_audio:  # Wait for audio to finish playing or user to press 'q'
                         time.sleep(0.1)  # Add a short delay to avoid excessive CPU usage
-                        if keyboard.is_pressed('q'):
+                        if keyboard.is_pressed('q') or keyboard.is_pressed('Q'):
                             is_playing_audio = False  # Set the flag to stop audio playback
                             break  # Exit the loop
             except sr.UnknownValueError:
