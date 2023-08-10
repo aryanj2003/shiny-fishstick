@@ -98,7 +98,10 @@ def play_audio(text):
     text: The text to be converted to audio and played.
     Return value: None
     '''
-    tts = gTTS(text=text, lang='en')  #Set the language (e.g., 'en' for English)
+    global is_playing_audio
+    is_playing_audio = True
+
+    tts = gTTS(text=text, lang='en')
     tts.save('output.mp3')
 
     pygame.mixer.init()
@@ -106,12 +109,18 @@ def play_audio(text):
     pygame.mixer.music.play()
 
     while pygame.mixer.music.get_busy():
-        if keyboard.is_pressed('q'):  # If 'q' key is pressed, stop playing audio
+        if not is_playing_audio:
             pygame.mixer.music.stop()
             break
         time.sleep(1)
 
+    is_playing_audio = False
+
+
 def play_audio_threaded(text):
+    global is_playing_audio
+    is_playing_audio = True
+
     audio_thread = threading.Thread(target=play_audio, args=(text,))
     audio_thread.start()
 
@@ -185,6 +194,7 @@ def generate_additional_insights(prompt):
 
     return answer
 
+
 greeting_played = False
 if __name__ == '__main__':
      # Get the location
@@ -244,6 +254,12 @@ if __name__ == '__main__':
                     response = generate_additional_insights(user_response)
                     print("Response:", response)
                     play_audio_threaded(response)
+                    
+                    while is_playing_audio:  # Wait for audio to finish playing or user to press 'q'
+                        time.sleep(0.1)  # Add a short delay to avoid excessive CPU usage
+                        if keyboard.is_pressed('q'):
+                            is_playing_audio = False  # Set the flag to stop audio playback
+                            break  # Exit the loop
             except sr.UnknownValueError:
                 # No wake-up phrase detected, continue listening
                 pass
