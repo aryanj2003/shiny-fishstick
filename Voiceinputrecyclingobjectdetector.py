@@ -16,6 +16,8 @@ from psycopg2 import Error
 cached_location = None
 recyclable_objects_cache = None
 nonrecyclable_objects_cache = None
+is_playing_audio = False
+
 def get_location():
     '''
     Purpose: Retrieve the location information.
@@ -114,13 +116,7 @@ def play_audio(text):
             break
         time.sleep(1)
 
-    is_playing_audio = False
-
-
 def play_audio_threaded(text):
-    global is_playing_audio
-    is_playing_audio = True
-
     audio_thread = threading.Thread(target=play_audio, args=(text,))
     audio_thread.start()
 
@@ -174,11 +170,11 @@ def generate_additional_insights(prompt):
 
     payload = json.dumps({
     "prompt": prompt,
-    "temperature": 1,
-    "top_p": 0.5,
+    "temperature": 0.7,
+    "top_p": 0.95,
     "frequency_penalty": 0,
     "presence_penalty": 0,
-    "max_tokens": 100,
+    "max_tokens": 400,
     "stop": None
     })
     headers = {
@@ -193,7 +189,6 @@ def generate_additional_insights(prompt):
     answer = response_dict['choices'][0]['text']
 
     return answer
-
 
 greeting_played = False
 if __name__ == '__main__':
@@ -245,21 +240,35 @@ if __name__ == '__main__':
                 user_response = keyword_recognizer.recognize_google(response_audio).lower()
                 print("Prompt:", user_response)
                 if user_response.lower() == "no":
-                    print(None)
+                    pass
                 elif any(keyword in user_response.lower() for keyword in ["stop", "exit", "quit"]):
-                    play_audio_threaded("Sure! If you want to regenerate the response, please say the wake-up phrase again.")
-                    time.sleep(5)  # Wait for a few seconds before ending the program or prompting GPT again
                     break  # Exit the program
                 else:
                     response = generate_additional_insights(user_response)
                     print("Response:", response)
                     play_audio_threaded(response)
-                    
-                    while is_playing_audio:  # Wait for audio to finish playing or user to press 'q'
-                        time.sleep(0.1)  # Add a short delay to avoid excessive CPU usage
-                        if keyboard.is_pressed('q') or keyboard.is_pressed('Q'):
-                            is_playing_audio = False  # Set the flag to stop audio playback
-                            break  # Exit the loop
+
+                    # Allow the user to interrupt audio playback by pressing 'q' or 'Q'
+                    try:
+                        while is_playing_audio:  # Wait for audio to finish playing or user to press 'q'
+                            time.sleep(0.1)  # Add a short delay to avoid excessive CPU usage
+                            if keyboard.is_pressed('q') or keyboard.is_pressed('Q'):
+                                is_playing_audio = False  # Set the flag to stop audio playback
+                                break  # Exit the loop
+                    except KeyboardInterrupt:
+                        #Ask the user if the want to exit the program
+                        play_audio_threaded('Would you like to exit the program')
+
+                        #Clarify what the user wants to do if they halted the program in the middle
+                        with sr.Microphone() as audio_source:
+                            keyword_recognizer.adjust_for_ambient_noise(audio_source, duration=1)
+                            response_audio = keyword_recognizer.listen(audio_source)
+                            user_answer = keyword_recognizer.recognize_google(response_audio).lower()
+                            #If the response is yes, exit the program. Otherwise, continue listening for input
+                            if user_answer == 'yes':
+                                break
+                            else:
+                                pass
             except sr.UnknownValueError:
                 # No wake-up phrase detected, continue listening
                 pass
