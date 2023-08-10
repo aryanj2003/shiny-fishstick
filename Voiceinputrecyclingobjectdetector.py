@@ -178,8 +178,12 @@ def generate_additional_insights(prompt):
     }
 
     response = requests.request("POST", url, headers=headers, data=payload)
+    response_dict = json.loads(response.text)
 
-    return response.text
+    # Extract the answer from the response
+    answer = response_dict['choices'][0]['text']
+
+    return answer
 
 greeting_played = False
 if __name__ == '__main__':
