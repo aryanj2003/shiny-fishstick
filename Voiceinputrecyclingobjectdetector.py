@@ -237,7 +237,7 @@ if __name__ == '__main__':
                     pass
                 
                 # Create a new audio variable for capturing user's response for additional insights
-                additional_insights_confirmationquestion = play_audio("Would you like any additional insights")
+                additional_insights_confirmationquestion = play_audio("Would you like any additional insights?")
                 with sr.Microphone() as response_source:
                     keyword_recognizer.adjust_for_ambient_noise(response_source, duration=1)
                     response_audio = keyword_recognizer.listen(response_source)
