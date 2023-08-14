@@ -232,7 +232,11 @@ if __name__ == '__main__':
 
                     # Output the result using a speaker
                     play_audio(result)
-                    # Create a new audio variable for capturing user's response for additional insights
+                else:
+                    #If the user does not give the correct Wake-up-phrase, continue listening until they do
+                    pass
+                
+                # Create a new audio variable for capturing user's response for additional insights
                 additional_insights_confirmationquestion = play_audio("Would you like any additional insights")
                 with sr.Microphone() as response_source:
                     keyword_recognizer.adjust_for_ambient_noise(response_source, duration=1)
